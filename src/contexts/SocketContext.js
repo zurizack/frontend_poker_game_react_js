@@ -15,7 +15,7 @@ export const SocketProvider = ({ children }) => {
       // אם קיים סוקט ישן, נתק אותו קודם
       socket.disconnect();
     }
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io('https://poker-game-mknp.onrender.com', {
       withCredentials: true,
       transports: ['websocket'],
       auth: { token: authToken }

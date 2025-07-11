@@ -15,11 +15,19 @@ export const SocketProvider = ({ children }) => {
       // אם קיים סוקט ישן, נתק אותו קודם
       socket.disconnect();
     }
+    
+    // const newSocket = io('http://localhost:5000', {
+    //   withCredentials: true,
+    //   transports: ['websocket'],
+    //   auth: { token: authToken }
+    // });
+    
     const newSocket = io('https://poker-game-mknp.onrender.com', {
       withCredentials: true,
       transports: ['websocket'],
       auth: { token: authToken }
     });
+
     setSocket(newSocket);
     console.log("Attempting to connect Socket.IO...");
   }, [socket]); // תלוי במופע הסוקט הנוכחי

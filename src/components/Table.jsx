@@ -65,11 +65,13 @@ function Table() {
       const allPlayersById = new Map();
 
       // הוספת שחקנים יושבים מתוך data.players (שהוא מערך)
-      Object.values(data.players).forEach((player) => {
-        if (player) {
-          allPlayersById.set(String(player.id), player); // וודא שה-ID הוא סטרינג
-        }
-      });
+      if (data.seats && Array.isArray(data.seats)) {
+        data.seats.forEach((seat) => {
+          if (seat && seat.player_data) {
+            allPlayersById.set(String(seat.player_data.id), seat.player_data);
+          }
+        });
+      }
 
       // הוספת צופים מתוך data.viewers (שהוא מערך)
       data.viewers.forEach((viewer) => {
@@ -97,7 +99,7 @@ function Table() {
       }
 
       // ממלאים את הכיסאות בשחקנים היושבים
-      data.players.forEach((player) => {
+      data.seats.forEach((player) => {
         if (player && typeof player.seat_number_on_current_table === "number") {
           processedSeats[player.seat_number_on_current_table] = player;
         }

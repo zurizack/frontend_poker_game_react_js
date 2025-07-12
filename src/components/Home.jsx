@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../redux/userSlice";
 import { useNavigate } from "react-router-dom";
-import { checkAuth } from "../redux/userSlice"; // למעלה
+import { checkAuth } from "../redux/userSlice";
+import axiosInstance from "../axiosConfig"; // ✅ ייבוא ה-axiosInstance
 
 function Home() {
   const dispatch = useDispatch();
@@ -15,8 +16,7 @@ function Home() {
   const [tables, setTables] = useState([]);
   const [loadingTables, setLoadingTables] = useState(true);
 
-
-    useEffect(() => {
+  useEffect(() => {
     if (status === "idle") {
       dispatch(checkAuth());
     }
@@ -31,24 +31,19 @@ function Home() {
 
   // שליפת שולחנות מהשרת
   useEffect(() => {
-    fetch("/game/tables", {
-      credentials: "include",
-    })
-      .then(async (res) => {
-        const text = await res.text(); // נשלוף את הטקסט הגולמי
-        console.log("Raw response:", text); // נציג אותו
-        return JSON.parse(text); // ננסה להפוך אותו ל-JSON
-      })
-      .then((data) => {
-        // console.log("data = ", data)
-        setTables(data);
+    // ✅ שינוי כאן: שימוש ב-axiosInstance
+    axiosInstance
+      .get("/game/tables")
+      .then((res) => {
+        console.log("Raw response data from axios:", res.data); // Axios מחזיר את הנתונים ב-res.data
+        setTables(res.data);
         setLoadingTables(false);
       })
       .catch((err) => {
         console.error("Error loading tables:", err);
         setLoadingTables(false);
       });
-  }, []);
+  }, []); // אין צורך ב-credentials: "include" כי זה כבר מוגדר ב-axiosInstance
 
   const handleLogout = () => {
     dispatch(logoutUser());

@@ -1,9 +1,9 @@
 // src/components/RegisterForm.jsx
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { registerUser } from '../redux/userSlice';
-import { useNavigate, Link } from 'react-router-dom';
-import './AuthForm.css';
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../redux/userSlice";
+import { useNavigate, Link } from "react-router-dom";
+import "./AuthForm.css";
 
 /**
  * RegisterForm component allows new users to create an account.
@@ -13,12 +13,13 @@ import './AuthForm.css';
 function RegisterForm() {
   // Initialize form data state with empty fields
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    nickname: '',
-    password: '',
-    birth_date: '',
+    first_name: "",
+    last_name: "",
+    email: "",
+    username: "", // ✅ Added username field
+    nickname: "", // This is now specifically for the display name
+    password: "",
+    birth_date: "",
   });
 
   const dispatch = useDispatch();
@@ -52,7 +53,7 @@ function RegisterForm() {
    */
   React.useEffect(() => {
     if (authenticated) {
-      navigate('/home');
+      navigate("/home");
     }
   }, [authenticated, navigate]);
 
@@ -93,10 +94,21 @@ function RegisterForm() {
             className="auth-input"
             required
           />
+          {/* ✅ New input for Username (for login) */}
+          <input
+            type="text"
+            name="username"
+            placeholder="Username (for login)"
+            value={formData.username}
+            onChange={handleChange}
+            className="auth-input"
+            required
+          />
+          {/* ✅ Updated placeholder for Nickname (display name) */}
           <input
             type="text"
             name="nickname"
-            placeholder="Nickname (Username)"
+            placeholder="Nickname (display name)"
             value={formData.nickname}
             onChange={handleChange}
             className="auth-input"
@@ -120,17 +132,21 @@ function RegisterForm() {
             required
           />
 
-          <button type="submit" className="auth-button">
-            {status === 'loading' ? 'Registering...' : 'Register'}
+          <button
+            type="submit"
+            className="auth-button"
+            disabled={status === "loading"}
+          >
+            {status === "loading" ? "Registering..." : "Register"}
           </button>
 
-          <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>
+          <p style={{ fontSize: "0.9rem", marginTop: "10px" }}>
             Already registered? <Link to="/">Login here</Link>
           </p>
         </form>
 
         {/* Display error message if registration fails */}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </div>
     </div>
   );

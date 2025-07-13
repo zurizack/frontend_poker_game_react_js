@@ -4,12 +4,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../redux/userSlice";
 import { useNavigate } from "react-router-dom";
 import { checkAuth } from "../redux/userSlice";
-import axiosInstance from "../axiosConfig"; // ✅ ייבוא ה-axiosInstance
+import axiosInstance from "../axiosConfig";
 
 function Home() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { nickname, authenticated, status } = useSelector(
+  // ✅ שינוי username חזרה ל-nickname לתצוגה
+  const { nickname, authenticated, status, balance } = useSelector(
     (state) => state.user
   );
 
@@ -31,11 +32,10 @@ function Home() {
 
   // שליפת שולחנות מהשרת
   useEffect(() => {
-    // ✅ שינוי כאן: שימוש ב-axiosInstance
     axiosInstance
       .get("/game/tables")
       .then((res) => {
-        console.log("Raw response data from axios:", res.data); // Axios מחזיר את הנתונים ב-res.data
+        console.log("Raw response data from axios:", res.data);
         setTables(res.data);
         setLoadingTables(false);
       })
@@ -43,7 +43,7 @@ function Home() {
         console.error("Error loading tables:", err);
         setLoadingTables(false);
       });
-  }, []); // אין צורך ב-credentials: "include" כי זה כבר מוגדר ב-axiosInstance
+  }, []);
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -55,7 +55,9 @@ function Home() {
 
   return (
     <div>
+      {/* ✅ שימוש ב-nickname לתצוגה */}
       <h1>ברוך הבא, {nickname}!</h1>
+      <p>יתרה: {balance !== undefined ? balance.toFixed(2) : "טוען..."}</p>
       <button onClick={handleLogout} disabled={status === "loading"}>
         {status === "loading" ? "מתנתק..." : "התנתק"}
       </button>

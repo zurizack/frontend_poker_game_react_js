@@ -30,7 +30,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, thunkAPI) => {
     try {
       const data = await authService.login(credentials);
-      return data; // e.g., { message, user: { nickname, id, ... } }
+      return data; // e.g., { message, user: { id, username, nickname, balance, is_admin, ... } }
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || { error: 'Login failed' });
     }
@@ -47,7 +47,7 @@ export const checkAuth = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const data = await authService.checkAuth();
-      return data; // e.g., { authenticated: true, user: { nickname, id, ... } }
+      return data; // e.g., { authenticated: true, user: { id, username, nickname, balance, is_admin, ... } }
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || { error: 'Auth check failed' });
     }
@@ -66,20 +66,22 @@ export const logoutUser = createAsyncThunk(
       const data = await authService.logout();
       return data; // e.g., { message: 'Logged out successfully' }
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || { error: 'Logout failed' });
+      return thunkAPI.rejectWithValue(error.response?.error || 'Logout failed'); 
     }
   }
 );
 
 // Initial state for the user slice
 const initialState = {
-  nickname: null,
+  username: null, 
+  nickname: null, // ✅ Added nickname to initial state
   userId: null,
   firstName: null,
   lastName: null,
+  balance: null, 
   isAdmin: false,
   authenticated: false,
-  status: 'idle', // can be 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: 'idle', 
   error: null,
 };
 
@@ -99,15 +101,26 @@ const userSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.authenticated = true;
-        state.nickname = action.payload.user?.username || null;
-        state.userId = action.payload.user?.user_id || null;
+        state.username = action.payload.user?.username || null; 
+        state.nickname = action.payload.user?.nickname || null; // ✅ Store nickname
+        state.userId = action.payload.user?.id || null; 
+        state.firstName = action.payload.user?.first_name || null; 
+        state.lastName = action.payload.user?.last_name || null; 
+        state.balance = action.payload.user?.balance || null; 
+        state.isAdmin = action.payload.user?.is_admin || false; 
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload?.error || 'Login failed';
+        state.error = action.payload?.message || action.payload?.error || 'Login failed'; 
         state.authenticated = false;
-        state.nickname = null;
+        state.username = null; 
+        state.nickname = null; // ✅ Reset nickname
+        state.userId = null;
+        state.firstName = null;
+        state.lastName = null;
+        state.balance = null; 
+        state.isAdmin = false;
       })
 
       // Handle checkAuth lifecycle actions
@@ -118,19 +131,38 @@ const userSlice = createSlice({
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.authenticated = action.payload.authenticated || false;
-        state.userId = action.payload.user_id || null;
-        state.nickname = action.payload.nickname  || null;
-        state.firstName = action.payload.first_name || null;
-        state.lastName = action.payload.last_name || null;
-        state.username = `${action.payload.first_name || ''} ${action.payload.last_name || ''}`.trim();
-        state.isAdmin = action.payload.is_admin || false;
+        // If authenticated, populate user details
+        if (action.payload.authenticated && action.payload.user) {
+          state.userId = action.payload.user.id || null; 
+          state.username = action.payload.user.username || null; 
+          state.nickname = action.payload.user.nickname || null; // ✅ Store nickname
+          state.firstName = action.payload.user.first_name || null; 
+          state.lastName = action.payload.user.last_name || null; 
+          state.balance = action.payload.user.balance || null; 
+          state.isAdmin = action.payload.user.is_admin || false; 
+        } else {
+          // If not authenticated, clear user details
+          state.userId = null;
+          state.username = null;
+          state.nickname = null; // ✅ Reset nickname
+          state.firstName = null;
+          state.lastName = null;
+          state.balance = null;
+          state.isAdmin = false;
+        }
         state.error = null;
       })
       .addCase(checkAuth.rejected, (state, action) => {
         state.status = 'failed';
         state.authenticated = false;
-        state.nickname = null;
-        state.error = action.payload?.error || 'Auth check failed';
+        state.username = null; 
+        state.nickname = null; // ✅ Reset nickname
+        state.userId = null;
+        state.firstName = null;
+        state.lastName = null;
+        state.balance = null; 
+        state.isAdmin = false;
+        state.error = action.payload?.message || action.payload?.error || 'Auth check failed'; 
       })
 
       // Handle logoutUser lifecycle actions
@@ -141,13 +173,18 @@ const userSlice = createSlice({
       .addCase(logoutUser.fulfilled, (state) => {
         state.status = 'idle';
         state.authenticated = false;
-        state.nickname = null;
-        state.userId = null
+        state.username = null; 
+        state.nickname = null; // ✅ Reset nickname
+        state.userId = null;
+        state.firstName = null;
+        state.lastName = null;
+        state.balance = null; 
+        state.isAdmin = false;
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload?.error || 'Logout failed';
+        state.error = action.payload?.message || action.payload?.error || 'Logout failed'; 
       });
   },
 });

@@ -7,7 +7,7 @@ import { checkAuth } from "../redux/userSlice";
 import { fetchTableInfo } from "../redux/tableSlice";
 
 import ActionButtons from "./ActionButtons";
-import Seat from "./Seat"; // נייבא את ה-Seat המתוקן
+import Seat from "./Seat"; // Import the Seat component
 import CommunityCardsDisplay from "./CommunityCardsDisplay";
 import PotDisplay from "./PotDisplay";
 import TableInfoDisplay from "./TableInfoDisplay";
@@ -20,7 +20,7 @@ function Table() {
   const dispatch = useDispatch();
 
   const [tableState, setTableState] = useState(null);
-  const [currentPlayerSeat, setCurrentPlayerSeat] = useState(null); // זה יהיה מספר הכיסא אם יושב, או null אם עומד/לא בשולחן
+  const [currentPlayerSeat, setCurrentPlayerSeat] = useState(null); // This will be the seat number if seated, or null if standing/not at table
   const currentUserId = useSelector((state) => state.user.userId);
   const nickname = useSelector((state) => state.user.nickname);
   const authStatus = useSelector((state) => state.user.status);
@@ -64,7 +64,7 @@ function Table() {
 
       const allPlayersById = new Map();
 
-      // הוספת שחקנים יושבים מתוך data.players (שהוא מערך)
+      // Add seated players from data.seats (which is an array of seat objects)
       if (data.seats && Array.isArray(data.seats)) {
         data.seats.forEach((seat) => {
           if (seat && seat.player_data) {
@@ -73,73 +73,53 @@ function Table() {
         });
       }
 
-      // הוספת צופים מתוך data.viewers (שהוא מערך)
+      // Add viewers from data.viewers (which is an array)
       data.viewers.forEach((viewer) => {
-        allPlayersById.set(String(viewer.id), viewer); // וודא שה-ID הוא סטרינג
+        allPlayersById.set(String(viewer.id), viewer); // Ensure ID is a string
       });
 
-      // נמצא את השחקן הנוכחי מתוך המפה הכוללת
-      // currentUserIdString אמור להיות זמין בסקופ זה (לדוגמה, מ-localStorage או context)
+      // Find the current player from the comprehensive map
       const selfPlayer = allPlayersById.get(currentUserIdString);
 
-      // עדכן את currentPlayerSeat: מספר הכיסא אם יושב, אחרת null
+      // Update currentPlayerSeat: seat number if seated, otherwise null
+      // Check if selfPlayer exists and has a seat_number_on_current_table
       const newCurrentPlayerSeat =
         selfPlayer &&
-        typeof selfPlayer.seat_number_on_current_table !== "undefined"
+        typeof selfPlayer.seat_number_on_current_table === "number"
           ? selfPlayer.seat_number_on_current_table
           : null;
       setCurrentPlayerSeat(newCurrentPlayerSeat);
       console.log("Table.jsx: currentPlayerSeat found:", newCurrentPlayerSeat);
 
-      // ✅ תיקון: בונים אובייקט processedSeats בצורה נכונה
-      // אתחול כל הכיסאות ל-null
-      const processedSeats = {};
-      for (let i = 1; i <= data.max_players; i++) {
-        processedSeats[i] = null;
-      }
-
-      // ממלאים את הכיסאות בשחקנים היושבים
-      data.seats.forEach((player) => {
-        if (player && typeof player.seat_number_on_current_table === "number") {
-          processedSeats[player.seat_number_on_current_table] = player;
-        }
-      });
-
-      // עדכן את ה-tableState עם הנתונים החדשים
+      // ✅ FIX: Directly set tableState with the received data.
+      // The 'seats' property in 'data' is already an array of seat objects from the backend.
       setTableState({
         ...data,
-        seats: processedSeats, // המבנה המעובד של הכיסאות
+        // No need to re-process 'seats' here, just use the array as is.
+        // The rendering logic will find the correct seat object by seatId.
       });
     };
 
     const handleSocketError = ({ message }) => {
-      console.error("שגיאת סוקט מהשרת:", message);
-      alert(`Error: ${message}`);
+      console.error("Socket error from server:", message);
+      // alert(`Error: ${message}`); // Avoid using alert() in production apps
     };
 
     const handleJoinSuccess = (data) => {
       console.log("handleJoinSuccess: ", data);
-      // כאן אפשר לעדכן סטטוס הצטרפות או להציג הודעה
+      // Here you can update join status or display a message
     };
 
     const handleSeatSuccess = (data) => {
-      console.log("handleJoinSuccess: ", data);
-      // כאן אפשר לעדכן סטטוס הצטרפות או להציג הודעה
+      console.log("handleSeatSuccess: ", data);
+      // Here you can update seat status or display a message
     };
 
-    const handleTableUpdate = (data) => {
-      // שינוי ל-message במקום msg
-      console.log("handleTableUpdate: ", data);
-    };
-
-    // השרת שולח table_update, וה-handleFullGameState אמור לטפל בו.
-    // אם table_update ו-full_game_state הם אותו דבר, השאר רק אחד.
-    // לפי הבקאנד שלך, full_game_state נשלח עם כל המידע.
-    // ה-handleTableUpdate למטה נראה כמו פונקציה ריקה. נשתמש ב-handleFullGameState.
+    // The server sends table_update, and handleFullGameState should handle it.
     socket.on("seat_success", handleSeatSuccess);
     socket.on("join_success", handleJoinSuccess);
-    socket.on("table_update", handleFullGameState); // נשתמש בזה לאירוע עדכון כללי
-    socket.on("full_table_state", handleFullGameState); // אם יש הבדל, צריך להבין אותו. כרגע מניח שהם זהים.
+    socket.on("table_update", handleFullGameState); // Use this for general table updates
+    socket.on("full_table_state", handleFullGameState); // If there's a difference, it needs to be understood. Currently assuming they are similar.
 
     socket.on("error", handleSocketError);
 
@@ -150,20 +130,20 @@ function Table() {
       socket.off("full_table_state", handleFullGameState);
       socket.off("error", handleSocketError);
     };
-  }, [socket, tableId, isAuthenticated, currentUserIdString]); // תלויות: parsedCurrentUserId השתנה ל-currentUserIdString
+  }, [socket, tableId, isAuthenticated, currentUserIdString]);
 
   const handleSit = (seatId) => {
     if (
       !socket ||
       !isAuthenticated ||
-      currentUserIdString === null || // שינוי ל-currentUserIdString
+      currentUserIdString === null ||
       !nickname
     )
       return;
     const buyInAmount = 1000;
     console.log(
       `Table.jsx: Sending 'player_take_a_seat' for table: ${tableId}, seat: ${seatId}, buy-in: ${buyInAmount}, userId: ${currentUserIdString}, nickname: ${nickname}`
-    ); // שינוי ל-currentUserIdString
+    );
     socket.emit("player_take_a_seat", {
       table_id: tableId,
       seat: seatId,
@@ -172,26 +152,26 @@ function Table() {
   };
 
   const handleStandUp = () => {
-    if (!socket || !isAuthenticated || currentUserIdString === null) return; // שינוי ל-currentUserIdString
+    if (!socket || !isAuthenticated || currentUserIdString === null) return;
     console.log(
       `Table.jsx: Sending 'player_standup' for table: ${tableId}, userId: ${currentUserIdString}`
-    ); // שינוי ל-currentUserIdString
+    );
     socket.emit("player_standup", {
       table_id: tableId,
-      user_id: currentUserIdString, // שינוי ל-currentUserIdString
+      user_id: currentUserIdString,
     });
   };
 
   if (authStatus === "loading" || authStatus === "idle") {
-    return <p>🔄 טוען נתוני התחברות...</p>;
+    return <p>🔄 Loading connection data...</p>;
   }
 
   if (!isAuthenticated) {
-    return <p>🔒 עליך להתחבר כדי לשחק.</p>;
+    return <p>🔒 You must be logged in to play.</p>;
   }
 
   if (!tableState || !tableInfo) {
-    return <p>טוען את מצב הטבלה...</p>;
+    return <p>Loading table state...</p>;
   }
 
   const seatPositionsByMaxPlayers = {
@@ -207,13 +187,16 @@ function Table() {
 
   const seatPositions = seatPositionsByMaxPlayers[tableState.max_players] || [];
 
-  // נצטרך גם לזהות את השחקן העומד אם הוא קיים, כדי להעביר ל-Seat
-  const selfPlayerInSeat = Object.values(tableState.seats).find(
-    (p) => p && String(p.id) === currentUserIdString // לוודא השוואת סטרינגים
-  );
+  // We also need to identify the standing player if they exist, to pass to Seat
+  const selfPlayerInSeat = tableState.seats.find(
+    (seat) =>
+      seat &&
+      seat.player_data &&
+      String(seat.player_data.id) === currentUserIdString
+  )?.player_data; // Get the player_data directly
 
   const selfPlayerAsSpectator = tableState.viewers.find(
-    (s) => s && String(s.id) === currentUserIdString // לוודא השוואת סטרינגים
+    (s) => s && String(s.id) === currentUserIdString
   );
 
   const selfPlayer = selfPlayerInSeat || selfPlayerAsSpectator;
@@ -221,27 +204,33 @@ function Table() {
 
   return (
     <div className="poker-table-wrapper">
-      {/* לולאה על כל המושבים האפשריים */}
+      {/* Loop over all possible seats */}
       {Array.from({ length: tableState.max_players }, (_, i) => i + 1).map(
         (seatId) => {
           const seatStyle = seatPositions[seatId - 1] || {};
-          // playerInThisSeat יכיל את אובייקט השחקן או null
-          const playerInThisSeat = tableState.seats[String(seatId)]; // וודא גישה עם סטרינג
+          // Find the specific seat object from the tableState.seats array
+          // The backend sends an array of seat objects, each with a 'seat_number' and 'player_data' (if occupied)
+          const seatData = tableState.seats.find(
+            (seat) => seat && seat.seat_number === seatId
+          );
+
+          // playerInThisSeat will contain the player's data object or null
+          const playerInThisSeat = seatData ? seatData.player_data : null;
 
           return (
             <Seat
               key={seatId}
               seatId={seatId}
-              playerInSeat={playerInThisSeat} // אובייקט השחקן היושב או null
+              playerInSeat={playerInThisSeat} // Pass the player object or null
               seatStyle={seatStyle}
-              // האם השחקן הנוכחי יושב בכיסא זה?
+              // Is the current player seated at this specific seat?
               isCurrentPlayerAtThisSeat={
                 playerInThisSeat &&
                 String(playerInThisSeat.id) === currentUserIdString
               }
-              // האם השחקן הנוכחי יושב בכלל (כדי להחליט על הצגת כפתור "שב")
+              // Does the current player occupy any seat at all? (to decide on showing "Sit" button)
               currentPlayerSeatExists={currentPlayerSeat !== null}
-              // העבר את מידע ה-selfPlayer כדי לדעת אם הוא "עומד"
+              // Pass selfPlayer info to know if they are "standing"
               selfPlayer={selfPlayer}
               onSit={handleSit}
               onStandUp={handleStandUp}
@@ -249,9 +238,9 @@ function Table() {
           );
         }
       )}
-      {/* אזור נוסף לשחקנים "עומדים" או "צופים" אם רוצים להציג אותם בנפרד */}
+      {/* Additional area for "standing" or "spectator" players if you want to display them separately */}
       {isCurrentPlayerStanding &&
-        selfPlayer && ( // וודא ש-selfPlayer קיים
+        selfPlayer && ( // Ensure selfPlayer exists
           <div
             style={{
               position: "absolute",
@@ -263,25 +252,24 @@ function Table() {
               color: "white",
             }}
           >
-            <p>אתה עומד ליד השולחן: {selfPlayer.nickname}</p>
-            {/* נניח ש-stack קיים גם עבור צופים אם זה רלוונטי */}
-            {selfPlayer.stack !== undefined && (
-              <p>צ'יפים: {selfPlayer.stack}</p>
-            )}
+            <p>You are standing at the table: {selfPlayer.nickname}</p>
+            {/* Assuming stack exists for spectators if relevant */}
+            {selfPlayer.stack !== undefined && <p>Chips: {selfPlayer.stack}</p>}
           </div>
         )}
-      {/* רשימת צופים - אם רוצים להציג אותה */}
-      {tableState.spectators_list && tableState.spectators_list.length > 0 && (
-        <div className="spectator-list-display">
-          <h3>צופים ({tableState.spectators_list.length}):</h3>
-          <ul>
-            {tableState.spectators_list.map((s) => (
-              <li key={s.id}>{s.nickname}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {tableState.current_turn_player_id === currentUserIdString && ( // שינוי ל-currentUserIdString
+      {/* Spectator list - if you want to display it */}
+      {tableState.viewers &&
+        tableState.viewers.length > 0 && ( // Changed from spectators_list to viewers
+          <div className="spectator-list-display">
+            <h3>Spectators ({tableState.viewers.length}):</h3>
+            <ul>
+              {tableState.viewers.map((s) => (
+                <li key={s.id}>{s.nickname}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      {tableState.current_turn_player_id === currentUserIdString && (
         <div
           style={{
             position: "absolute",
@@ -292,15 +280,15 @@ function Table() {
         >
           <ActionButtons
             tableState={tableState}
-            currentUserId={currentUserIdString} // שינוי ל-currentUserIdString
+            currentUserId={currentUserIdString}
             tableId={tableId}
             socket={socket}
           />
         </div>
       )}
-      {/* עדכון שמות המאפיינים בהתאם ל-JSON החדש */}
-      <PotDisplay potAmount={tableState.pot} />{" "}
-      {/* שינוי מ-current_pot ל-pot */}
+      {/* Update property names according to the new JSON */}
+      <PotDisplay potAmount={tableState.pot_size} />{" "}
+      {/* Changed from pot to pot_size */}
       <CommunityCardsDisplay communityCards={tableState.community_cards} />
       <TableInfoDisplay
         tableName={tableInfo.name || tableId}

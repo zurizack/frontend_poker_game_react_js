@@ -12,10 +12,10 @@ export const registerUser = createAsyncThunk(
   async (userData, thunkAPI) => {
     try {
       const data = await authService.register(userData);
-      return data;
+      return data; // e.g., { message: 'User registered successfully', user: { ... } }
     } catch (error) {
-      // Return error response data or default error object
-      return thunkAPI.rejectWithValue(error.response?.data || { error: 'Registration failed' });
+      // Return error response data (e.g., { message: 'Username already exists' })
+      return thunkAPI.rejectWithValue(error.response?.data || { message: 'Registration failed' });
     }
   }
 );
@@ -32,7 +32,7 @@ export const loginUser = createAsyncThunk(
       const data = await authService.login(credentials);
       return data; // e.g., { message, user: { id, username, nickname, balance, is_admin, ... } }
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || { error: 'Login failed' });
+      return thunkAPI.rejectWithValue(error.response?.data || { message: 'Login failed' });
     }
   }
 );
@@ -49,15 +49,14 @@ export const checkAuth = createAsyncThunk(
       const data = await authService.checkAuth();
       return data; // e.g., { authenticated: true, user: { id, username, nickname, balance, is_admin, ... } }
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || { error: 'Auth check failed' });
+      return thunkAPI.rejectWithValue(error.response?.data || { message: 'Auth check failed' });
     }
   }
 );
 
 /**
  * Async thunk to log out the current user.
- * Calls authService.logout.
- * Returns confirmation message or rejects with error message.
+ * @returns {Promise<Object>} - Response data confirming logout.
  */
 export const logoutUser = createAsyncThunk(
   'user/logoutUser',
@@ -66,7 +65,7 @@ export const logoutUser = createAsyncThunk(
       const data = await authService.logout();
       return data; // e.g., { message: 'Logged out successfully' }
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.error || 'Logout failed'); 
+      return thunkAPI.rejectWithValue(error.response?.message || 'Logout failed'); 
     }
   }
 );
@@ -74,7 +73,7 @@ export const logoutUser = createAsyncThunk(
 // Initial state for the user slice
 const initialState = {
   username: null, 
-  nickname: null, // ✅ Added nickname to initial state
+  nickname: null, 
   userId: null,
   firstName: null,
   lastName: null,
@@ -83,16 +82,38 @@ const initialState = {
   authenticated: false,
   status: 'idle', 
   error: null,
+  registrationMessage: null, // ✅ New field for registration feedback
 };
 
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    // Add synchronous reducers here if needed
+    // Reducer to clear registration message
+    clearRegistrationMessage: (state) => { // ✅ New reducer
+      state.registrationMessage = null;
+    },
   },
   extraReducers: (builder) => {
     builder
+      // Handle registerUser lifecycle actions
+      .addCase(registerUser.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+        state.registrationMessage = null; // Clear previous messages
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.error = null;
+        state.registrationMessage = action.payload.message || 'Registration successful!'; // ✅ Store success message
+        // Do NOT set authenticated here; user needs to log in after registration
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload?.message || 'Registration failed'; // ✅ Store error message
+        state.registrationMessage = action.payload?.message || 'Registration failed'; // ✅ Store error message for display
+      })
+
       // Handle loginUser lifecycle actions
       .addCase(loginUser.pending, (state) => {
         state.status = 'loading';
@@ -102,7 +123,7 @@ const userSlice = createSlice({
         state.status = 'succeeded';
         state.authenticated = true;
         state.username = action.payload.user?.username || null; 
-        state.nickname = action.payload.user?.nickname || null; // ✅ Store nickname
+        state.nickname = action.payload.user?.nickname || null; 
         state.userId = action.payload.user?.id || null; 
         state.firstName = action.payload.user?.first_name || null; 
         state.lastName = action.payload.user?.last_name || null; 
@@ -115,7 +136,7 @@ const userSlice = createSlice({
         state.error = action.payload?.message || action.payload?.error || 'Login failed'; 
         state.authenticated = false;
         state.username = null; 
-        state.nickname = null; // ✅ Reset nickname
+        state.nickname = null; 
         state.userId = null;
         state.firstName = null;
         state.lastName = null;
@@ -131,20 +152,18 @@ const userSlice = createSlice({
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.authenticated = action.payload.authenticated || false;
-        // If authenticated, populate user details
         if (action.payload.authenticated && action.payload.user) {
           state.userId = action.payload.user.id || null; 
           state.username = action.payload.user.username || null; 
-          state.nickname = action.payload.user.nickname || null; // ✅ Store nickname
+          state.nickname = action.payload.user.nickname || null; 
           state.firstName = action.payload.user.first_name || null; 
           state.lastName = action.payload.user.last_name || null; 
           state.balance = action.payload.user.balance || null; 
           state.isAdmin = action.payload.user.is_admin || false; 
         } else {
-          // If not authenticated, clear user details
           state.userId = null;
           state.username = null;
-          state.nickname = null; // ✅ Reset nickname
+          state.nickname = null; 
           state.firstName = null;
           state.lastName = null;
           state.balance = null;
@@ -156,7 +175,7 @@ const userSlice = createSlice({
         state.status = 'failed';
         state.authenticated = false;
         state.username = null; 
-        state.nickname = null; // ✅ Reset nickname
+        state.nickname = null; 
         state.userId = null;
         state.firstName = null;
         state.lastName = null;
@@ -174,7 +193,7 @@ const userSlice = createSlice({
         state.status = 'idle';
         state.authenticated = false;
         state.username = null; 
-        state.nickname = null; // ✅ Reset nickname
+        state.nickname = null; 
         state.userId = null;
         state.firstName = null;
         state.lastName = null;
@@ -189,4 +208,5 @@ const userSlice = createSlice({
   },
 });
 
+export const { clearRegistrationMessage } = userSlice.actions; // ✅ Export new action
 export default userSlice.reducer;

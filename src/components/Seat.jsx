@@ -45,14 +45,31 @@ function Seat({
       {isOccupied ? ( // אם הכיסא תפוס
         <div style={{ padding: "5px" }}>
           <p style={{ margin: "0", fontWeight: "bold" }}>Seat {seatId}</p>
+          {/* ✅ הוספת לוגים לאבחון */}
+          {console.log(
+            `Seat ${seatId}: isOccupied is true. playerInSeat:`,
+            playerInSeat
+          )}
+          {console.log(
+            `Seat ${seatId}: playerInSeat.username:`,
+            playerInSeat?.username
+          )}
+          {console.log(
+            `Seat ${seatId}: playerInSeat.nickname:`,
+            playerInSeat?.nickname
+          )}{" "}
+          {/* ✅ Check for nickname too */}
+          {console.log(
+            `Seat ${seatId}: playerInSeat.chips_on_current_table:`,
+            playerInSeat?.chips_on_current_table
+          )}
           <p style={{ margin: "2px 0 0 0" }}>
-            {console.log("the player data u looking for: ", playerInSeat)}
-            {playerInSeat.username || "שחקן"}
+            {playerInSeat.nickname || playerInSeat.username || "שחקן"}{" "}
+            {/* ✅ Prefer nickname for display */}
           </p>
           <p style={{ margin: "2px 0" }}>
             ({playerInSeat.chips_on_current_table} chips)
           </p>
-
           {/* הצגת היד הפרטית רק לשחקן הנוכחי בכיסא זה */}
           {isCurrentPlayerAtThisSeat &&
             playerInSeat.hole_cards &&
@@ -126,7 +143,6 @@ function Seat({
                 ></div>
               </div>
             )}
-
           {isCurrentPlayerAtThisSeat && (
             <button
               onClick={onStandUp}

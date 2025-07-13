@@ -1,7 +1,7 @@
 // src/components/RegisterForm.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // ✅ Import useEffect
 import { useDispatch, useSelector } from "react-redux";
-import { registerUser } from "../redux/userSlice";
+import { registerUser, clearRegistrationMessage } from "../redux/userSlice"; // ✅ Import clearRegistrationMessage
 import { useNavigate, Link } from "react-router-dom";
 import "./AuthForm.css";
 
@@ -16,16 +16,18 @@ function RegisterForm() {
     first_name: "",
     last_name: "",
     email: "",
-    username: "", // ✅ Added username field
-    nickname: "", // This is now specifically for the display name
+    username: "",
+    nickname: "",
     password: "",
     birth_date: "",
   });
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // Select user status, error messages, and authentication status from redux store
-  const { status, error, authenticated } = useSelector((state) => state.user);
+  // Select user status, error messages, authentication status, and registrationMessage from redux store
+  const { status, error, authenticated, registrationMessage } = useSelector(
+    (state) => state.user
+  ); // ✅ Get registrationMessage
 
   /**
    * Updates the form data state when any input changes.
@@ -51,11 +53,29 @@ function RegisterForm() {
    * useEffect hook to navigate to '/home' if the user is authenticated.
    * This runs whenever 'authenticated' or 'navigate' changes.
    */
-  React.useEffect(() => {
+  useEffect(() => {
     if (authenticated) {
       navigate("/home");
     }
   }, [authenticated, navigate]);
+
+  // ✅ New useEffect for registration feedback and redirect
+  useEffect(() => {
+    if (status === "succeeded" && registrationMessage) {
+      // Registration successful
+      alert(registrationMessage); // Display success message
+      dispatch(clearRegistrationMessage()); // Clear message after display
+      navigate("/"); // Redirect to login page
+    } else if (status === "failed" && registrationMessage) {
+      // Registration failed, display error
+      alert(registrationMessage); // Display error message
+      dispatch(clearRegistrationMessage()); // Clear message after display
+    }
+    // Clean up message on component unmount or when status changes
+    return () => {
+      dispatch(clearRegistrationMessage());
+    };
+  }, [status, registrationMessage, navigate, dispatch]); // Add dependencies
 
   return (
     <div className="auth-container">
@@ -94,7 +114,6 @@ function RegisterForm() {
             className="auth-input"
             required
           />
-          {/* ✅ New input for Username (for login) */}
           <input
             type="text"
             name="username"
@@ -104,7 +123,6 @@ function RegisterForm() {
             className="auth-input"
             required
           />
-          {/* ✅ Updated placeholder for Nickname (display name) */}
           <input
             type="text"
             name="nickname"
@@ -145,8 +163,9 @@ function RegisterForm() {
           </p>
         </form>
 
-        {/* Display error message if registration fails */}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* ✅ Display error message from registrationMessage if status is failed */}
+        {/* The general 'error' state is still useful for other thunks */}
+        {/* {error && <p style={{ color: 'red' }}>{error}</p>} */}
       </div>
     </div>
   );

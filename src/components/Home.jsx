@@ -9,7 +9,6 @@ import axiosInstance from "../axiosConfig";
 function Home() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // ✅ שינוי username חזרה ל-nickname לתצוגה
   const { nickname, authenticated, status, balance } = useSelector(
     (state) => state.user
   );
@@ -55,9 +54,9 @@ function Home() {
 
   return (
     <div>
-      {/* ✅ שימוש ב-nickname לתצוגה */}
       <h1>ברוך הבא, {nickname}!</h1>
-      <p>יתרה: {balance !== undefined ? balance.toFixed(2) : "טוען..."}</p>
+      {/* ✅ תיקון: בדיקה אם balance אינו null או undefined */}
+      <p>balance: {balance != null ? balance.toFixed(2) : "טוען..."}</p>
       <button onClick={handleLogout} disabled={status === "loading"}>
         {status === "loading" ? "מתנתק..." : "התנתק"}
       </button>

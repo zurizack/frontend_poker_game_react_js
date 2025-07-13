@@ -3,50 +3,42 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/userSlice";
 import { useNavigate, Link } from "react-router-dom";
-import { useSocket } from "../contexts/SocketContext"; // <--- ייבוא חדש!
+import { useSocket } from "../contexts/SocketContext";
 
 import "./AuthForm.css";
 
 function LoginForm() {
-  const [inputNickname, setInputNickname] = useState("");
+  const [inputUsername, setInputUsername] = useState("");
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { connectSocket } = useSocket(); // <--- קבלת הפונקציה מהקונטקסט
+  const { connectSocket } = useSocket();
 
-  const { status, error, nickname, authenticated } = useSelector(
+  const { status, error, username, authenticated } = useSelector(
     (state) => state.user
   );
 
   useEffect(() => {
     if (authenticated) {
-      // אם כבר מאומת, נווט לדף הבית.
-      // חשוב לוודא שה-socket מתחבר מחדש גם אם מגיעים לדף ה-home כשהוא כבר מאומת (לדוגמה, אחרי רענון דף).
-      // ניתן לעשות זאת ב-App.js או בקומפוננטת ה-layout הראשית.
       console.log(
         "User is authenticated, navigating to /home and attempting to connect socket."
       );
-      connectSocket(); // <--- קריאה לחיבור סוקט ברגע שהמשתמש מאומת
+      connectSocket();
       navigate("/home");
     }
-  }, [authenticated, navigate, connectSocket]); // הוסף connectSocket לתלויות
+  }, [authenticated, navigate, connectSocket]);
 
   const handleSubmit = async (e) => {
-    // הפוך ל-async
     e.preventDefault();
     const resultAction = await dispatch(
-      loginUser({ nickname: inputNickname, password })
-    ); // המתן לתוצאה
+      loginUser({ username: inputUsername, password })
+    );
 
     if (loginUser.fulfilled.match(resultAction)) {
-      // אם ה-login הצליח (status 200)
       console.log("Login successful! Attempting to reconnect socket...");
-      // *** זה השלב הקריטי: חיבור מחדש של הסוקט לאחר ה-login ***
-      connectSocket(); // <--- קריאה לחיבור סוקט לאחר שה-HTTP login הצליח
-      // הניווט כבר יטופל ב-useEffect למעלה
+      connectSocket();
     } else {
       console.error("Login failed or rejected.");
-      // טיפול בשגיאת לוגין (הודעה למשתמש וכו')
     }
   };
 
@@ -64,9 +56,9 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="auth-form">
           <input
             type="text"
-            placeholder="Nickname"
-            value={inputNickname}
-            onChange={(e) => setInputNickname(e.target.value)}
+            placeholder="Username"
+            value={inputUsername}
+            onChange={(e) => setInputUsername(e.target.value)}
             className="auth-input"
             required
           />
@@ -89,8 +81,9 @@ function LoginForm() {
         </form>
 
         {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* ✅ Moved comment to a separate line */}
         {authenticated && (
-          <p style={{ color: "green" }}>Welcome, {nickname}!</p>
+          <p style={{ color: "green" }}>Welcome, {username}!</p>
         )}
       </div>
     </div>

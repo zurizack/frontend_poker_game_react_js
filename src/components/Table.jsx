@@ -1,7 +1,7 @@
 // src/components/Table.jsx
 import React, { useState, useEffect } from "react";
 import Seat from "./Seat";
-import pokerTableDesktop from "../assets/images/poker_table_desktop.png"; // ייבוא תמונה למחשב
+import pokerTableDesktop from "../assets/images/poker_table.png"; // ייבוא תמונה למחשב
 import pokerTableMobile from "../assets/images/poker_table_for_mobile.png"; // ייבוא תמונה לטלפון (השם שציינת)
 
 function Table({

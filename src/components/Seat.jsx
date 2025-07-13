@@ -32,8 +32,8 @@ function Seat({
           ? "2px solid #f1c40f"
           : "1px solid #555", // מסגרת אם זה השחקן הנוכחי
         borderRadius: "50%", // עיגול לכיסא
-        width: "120px",
-        height: "120px",
+        // ✅ REMOVED: width: "120px",
+        // ✅ REMOVED: height: "120px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -45,7 +45,7 @@ function Seat({
       {isOccupied ? ( // אם הכיסא תפוס
         <div style={{ padding: "5px" }}>
           <p style={{ margin: "0", fontWeight: "bold" }}>Seat {seatId}</p>
-          {/* ✅ הוספת לוגים לאבחון */}
+          {/* הוספת לוגים לאבחון */}
           {console.log(
             `Seat ${seatId}: isOccupied is true. playerInSeat:`,
             playerInSeat
@@ -58,14 +58,14 @@ function Seat({
             `Seat ${seatId}: playerInSeat.nickname:`,
             playerInSeat?.nickname
           )}{" "}
-          {/* ✅ Check for nickname too */}
+          {/* Check for nickname too */}
           {console.log(
             `Seat ${seatId}: playerInSeat.chips_on_current_table:`,
             playerInSeat?.chips_on_current_table
           )}
           <p style={{ margin: "2px 0 0 0" }}>
             {playerInSeat.nickname || playerInSeat.username || "שחקן"}{" "}
-            {/* ✅ Prefer nickname for display */}
+            {/* Prefer nickname for display */}
           </p>
           <p style={{ margin: "2px 0" }}>
             ({playerInSeat.chips_on_current_table} chips)

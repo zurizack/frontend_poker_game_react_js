@@ -1,48 +1,114 @@
 /* AuthForm.css */
 .auth-container {
-  display: flex;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-  direction: rtl;
+    display: flex;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+    direction: rtl; /* For Hebrew text direction */
+    overflow: auto; /* Allow scrolling if content overflows */
 }
 
 .auth-welcome {
-  flex: 1;
-  background-color: #0b3d91;
-  color: white;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+    flex: 1;
+    background-color: #0b3d91;
+    color: white;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center; /* Center text for mobile */
 }
 
 .auth-form-section {
-  flex: 1;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background-color: #f0f0f0;
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* Center form horizontally */
+    background-color: #f0f0f0;
 }
 
 .auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%; /* Make form take full width of its container */
+    max-width: 350px; /* Increased max-width for better desktop appearance */
+    padding: 20px; /* Add some padding to the form itself */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 
 .auth-input {
-  padding: 10px;
-  font-size: 16px;
+    padding: 12px; /* Slightly larger padding for touch targets */
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px; /* Rounded corners */
 }
 
 .auth-button {
-  padding: 10px;
-  background-color: #0b3d91;
-  color: white;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
+    padding: 12px; /* Slightly larger padding */
+    background-color: #0b3d91;
+    color: white;
+    border: none;
+    font-size: 18px; /* Larger font for buttons */
+    cursor: pointer;
+    border-radius: 5px; /* Rounded corners */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.auth-button:hover {
+    background-color: #082a6b; /* Darker on hover */
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+    .auth-container {
+        flex-direction: column; /* Stack sections vertically on smaller screens */
+        height: auto; /* Allow height to adjust to content */
+        min-height: 100vh; /* Ensure it still takes full viewport height if content is short */
+    }
+
+    .auth-welcome,
+    .auth-form-section {
+        flex: none; /* Remove flex-grow */
+        width: 100%; /* Take full width */
+        padding: 20px; /* Adjust padding for mobile */
+    }
+
+    .auth-welcome {
+        padding-top: 40px; /* More padding at the top for welcome section */
+        padding-bottom: 20px;
+    }
+
+    .auth-form-section {
+        padding-top: 20px;
+        padding-bottom: 40px; /* More padding at the bottom for form section */
+    }
+
+    .auth-welcome h1 {
+        font-size: 2em; /* Adjust font size for mobile */
+    }
+
+    .auth-welcome p {
+        font-size: 1em;
+    }
+
+    .auth-form {
+        max-width: 90%; /* Allow form to be wider on mobile */
+        margin: 0 auto; /* Center the form */
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-welcome h1 {
+        font-size: 1.8em;
+    }
+    .auth-form h2 {
+        font-size: 1.5em;
+    }
+    .auth-input, .auth-button {
+        font-size: 15px;
+        padding: 10px;
+    }
 }

@@ -1,21 +1,241 @@
+/* src/components/Table.css */
+
 .poker-table-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 1100px; /* או כמה שאתה רוצה */
-  height: 700px;
-  margin: 0 auto;
-  background-image: url("../assets/images/poker_table.png");
-  background-size: cover;
-  background-position: center;
-  border-radius: 20px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    position: relative;
+    width: 90vw; /* Use viewport width for responsiveness */
+    max-width: 1000px; /* Max width for larger screens */
+    height: 60vw; /* Use viewport width for height to maintain aspect ratio */
+    max-height: 600px; /* Max height for larger screens */
+    background-color: #28a745; /* Green felt color */
+    border: 10px solid #8b4513; /* Wooden border */
+    border-radius: 50%; /* Make it round */
+    margin: 20px auto; /* Center the table horizontally */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    overflow: hidden; /* Hide anything outside the table circle */
+    box-sizing: border-box; /* Include padding/border in width/height */
 }
 
+/* Inner table area (where cards and pot are) */
+.inner-table-area {
+    position: absolute;
+    width: 60%; /* Inner area is smaller */
+    height: 60%;
+    background-color: #34495e; /* Darker center */
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.2em;
+}
 
+/* Styling for seat (defined in Seat.jsx, but general adjustments here) */
 .player-seat {
-  background-color: rgba(255,255,255,0.8);
-  padding: 10px;
-  border-radius: 10px;
-  min-width: 60px;
-  text-align: center;
+    /* Styles are mostly in Seat.jsx, but ensure it scales */
+    width: 12vw; /* Responsive width for seats */
+    height: 12vw; /* Responsive height for seats */
+    max-width: 120px; /* Max size for seats */
+    max-height: 120px; /* Max size for seats */
+    font-size: 0.9em; /* Adjust font size */
+}
+
+/* Community Cards Display */
+.community-cards-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 5px;
+    z-index: 5;
+}
+
+.community-card {
+    width: 6vw; /* Responsive card width */
+    height: 9vw; /* Responsive card height */
+    max-width: 60px; /* Max card size */
+    max-height: 90px; /* Max card size */
+    border: 1px solid #888;
+    border-radius: 6px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+}
+
+/* Pot Display */
+.pot-display {
+    position: absolute;
+    top: 30%; /* Adjust position relative to table */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 15px;
+    font-size: 1.1em;
+    z-index: 5;
+}
+
+/* Table Info Display */
+.table-info-display {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    z-index: 5;
+}
+
+/* Action Buttons */
+.action-buttons-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10;
+}
+
+.action-buttons-container button {
+    padding: 10px 15px;
+    font-size: 1em;
+    background-color: #0b3d91;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.action-buttons-container button:hover {
+    background-color: #082a6b;
+}
+
+/* Spectator List Display */
+.spectator-list-display {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    font-size: 0.9em;
+    max-height: 150px; /* Limit height */
+    overflow-y: auto; /* Add scroll if many spectators */
+}
+
+.spectator-list-display h3 {
+    margin-top: 0;
+    font-size: 1.1em;
+}
+
+.spectator-list-display ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.spectator-list-display li {
+    margin-bottom: 3px;
+}
+
+/* Media Queries for Table Responsiveness */
+@media (max-width: 768px) {
+    .poker-table-wrapper {
+        width: 95vw; /* Slightly wider on smaller screens */
+        height: 95vw; /* Make it square for mobile to maximize space */
+        max-width: none; /* Remove max-width constraint */
+        max-height: none; /* Remove max-height constraint */
+        margin-top: 10px; /* Adjust margin */
+        margin-bottom: 10px;
+    }
+
+    .player-seat {
+        width: 18vw; /* Larger seats on smaller screens */
+        height: 18vw;
+        font-size: 0.8em; /* Smaller font for seat info */
+    }
+
+    .community-card {
+        width: 8vw; /* Larger cards on smaller screens */
+        height: 12vw;
+        font-size: 1.2em;
+    }
+
+    .pot-display {
+        font-size: 1em;
+        padding: 6px 12px;
+    }
+
+    .table-info-display {
+        font-size: 0.8em;
+        padding: 8px 12px;
+        top: 10px;
+        left: 10px;
+    }
+
+    .action-buttons-container {
+        bottom: 10px;
+        right: 10px;
+        gap: 5px;
+    }
+
+    .action-buttons-container button {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+
+    .spectator-list-display {
+        font-size: 0.8em;
+        padding: 8px;
+        bottom: 5px;
+        left: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .poker-table-wrapper {
+        width: 98vw;
+        height: 98vw;
+        border-width: 5px; /* Thinner border */
+    }
+
+    .player-seat {
+        width: 20vw; /* Even larger seats */
+        height: 20vw;
+        font-size: 0.7em;
+    }
+
+    .community-card {
+        width: 10vw;
+        height: 15vw;
+        font-size: 1em;
+    }
+
+    .pot-display {
+        font-size: 0.9em;
+    }
+
+    .table-info-display {
+        font-size: 0.7em;
+    }
+
+    .action-buttons-container button {
+        font-size: 0.8em;
+        padding: 6px 10px;
+    }
 }

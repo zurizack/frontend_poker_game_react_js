@@ -1,301 +1,150 @@
 // src/components/Table.jsx
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useSocket } from "../contexts/SocketContext";
-import { useSelector, useDispatch } from "react-redux";
-import { checkAuth } from "../redux/userSlice";
-import { fetchTableInfo } from "../redux/tableSlice";
+import React, { useState, useEffect } from "react";
+import Seat from "./Seat";
+import pokerTableDesktop from "../assets/images/poker_table_desktop.png"; // ייבוא תמונה למחשב
+import pokerTableMobile from "../assets/images/poker_table_for_mobile.png"; // ייבוא תמונה לטלפון (השם שציינת)
 
-import ActionButtons from "./ActionButtons";
-import Seat from "./Seat"; // Import the Seat component
-import CommunityCardsDisplay from "./CommunityCardsDisplay";
-import PotDisplay from "./PotDisplay";
-import TableInfoDisplay from "./TableInfoDisplay";
+function Table({
+  players,
+  communityCards,
+  pot,
+  tableInfo,
+  spectators,
+  onSit,
+  onStandUp,
+  currentPlayerId,
+  currentPlayerSeatId,
+  isCurrentPlayerSitting,
+  onCall,
+  onFold,
+  onRaise,
+}) {
+  const [currentTableImage, setCurrentTableImage] = useState("");
 
-import "./Table.css";
-
-function Table() {
-  const { id: tableId } = useParams();
-  const { socket } = useSocket();
-  const dispatch = useDispatch();
-
-  const [tableState, setTableState] = useState(null);
-  const [currentPlayerSeat, setCurrentPlayerSeat] = useState(null); // This will be the seat number if seated, or null if standing/not at table
-  const currentUserId = useSelector((state) => state.user.userId);
-  const nickname = useSelector((state) => state.user.nickname);
-  const authStatus = useSelector((state) => state.user.status);
-  const isAuthenticated = useSelector((state) => state.user.authenticated);
-  const tableInfo = useSelector((state) => state.table.tableInfo);
-
-  const currentUserIdString = currentUserId ? String(currentUserId) : null;
-
-  useEffect(() => {
-    console.log("Table.jsx: currentUserId from Redux:", currentUserId);
-    console.log("Table.jsx: currentUserIdString:", currentUserIdString);
-  }, [currentUserId, currentUserIdString]);
-
-  useEffect(() => {
-    if (authStatus === "idle") {
-      dispatch(checkAuth());
+  // פונקציה לבחירת התמונה הנכונה לפי רוחב המסך
+  const updateBackgroundImage = () => {
+    // נקודת שבירה: אם רוחב המסך קטן מ-768 פיקסלים, נניח שזה מובייל
+    // ניתן לשנות את 768px לנקודת שבירה אחרת אם תרצה
+    if (window.innerWidth < 768) {
+      setCurrentTableImage(pokerTableMobile);
+    } else {
+      setCurrentTableImage(pokerTableDesktop);
     }
-  }, [dispatch, authStatus]);
-
-  useEffect(() => {
-    if (tableId) {
-      dispatch(fetchTableInfo(tableId));
-    }
-  }, [dispatch, tableId]);
-
-  useEffect(() => {
-    if (!socket || !isAuthenticated || currentUserIdString === null) {
-      console.log(
-        "Socket effect skipped. currentUserIdString:",
-        currentUserIdString,
-        "isAuthenticated:",
-        isAuthenticated
-      );
-      return;
-    }
-
-    socket.emit("join_table", { table_id: tableId });
-
-    const handleFullGameState = (data) => {
-      console.log("Table.jsx: Full game state received (raw):", data);
-
-      const allPlayersById = new Map();
-
-      // Add seated players from data.seats (which is an array of seat objects)
-      if (data.seats && Array.isArray(data.seats)) {
-        data.seats.forEach((seat) => {
-          if (seat && seat.player_data) {
-            allPlayersById.set(String(seat.player_data.id), seat.player_data);
-          }
-        });
-      }
-
-      // Add viewers from data.viewers (which is an array)
-      data.viewers.forEach((viewer) => {
-        allPlayersById.set(String(viewer.id), viewer); // Ensure ID is a string
-      });
-
-      // Find the current player from the comprehensive map
-      const selfPlayer = allPlayersById.get(currentUserIdString);
-
-      // Update currentPlayerSeat: seat number if seated, otherwise null
-      // Check if selfPlayer exists and has a seat_number_on_current_table
-      const newCurrentPlayerSeat =
-        selfPlayer &&
-        typeof selfPlayer.seat_number_on_current_table === "number"
-          ? selfPlayer.seat_number_on_current_table
-          : null;
-      setCurrentPlayerSeat(newCurrentPlayerSeat);
-      console.log("Table.jsx: currentPlayerSeat found:", newCurrentPlayerSeat);
-
-      // ✅ FIX: Directly set tableState with the received data.
-      // The 'seats' property in 'data' is already an array of seat objects from the backend.
-      setTableState({
-        ...data,
-        // No need to re-process 'seats' here, just use the array as is.
-        // The rendering logic will find the correct seat object by seatId.
-      });
-    };
-
-    const handleSocketError = ({ message }) => {
-      console.error("Socket error from server:", message);
-      // alert(`Error: ${message}`); // Avoid using alert() in production apps
-    };
-
-    const handleJoinSuccess = (data) => {
-      console.log("handleJoinSuccess: ", data);
-      // Here you can update join status or display a message
-    };
-
-    const handleSeatSuccess = (data) => {
-      console.log("handleSeatSuccess: ", data);
-      // Here you can update seat status or display a message
-    };
-
-    // The server sends table_update, and handleFullGameState should handle it.
-    socket.on("seat_success", handleSeatSuccess);
-    socket.on("join_success", handleJoinSuccess);
-    socket.on("table_update", handleFullGameState); // Use this for general table updates
-    socket.on("full_table_state", handleFullGameState); // If there's a difference, it needs to be understood. Currently assuming they are similar.
-
-    socket.on("error", handleSocketError);
-
-    return () => {
-      socket.off("table_update", handleFullGameState);
-      socket.off("seat_success", handleSeatSuccess);
-      socket.off("join_success", handleJoinSuccess);
-      socket.off("full_table_state", handleFullGameState);
-      socket.off("error", handleSocketError);
-    };
-  }, [socket, tableId, isAuthenticated, currentUserIdString]);
-
-  const handleSit = (seatId) => {
-    if (
-      !socket ||
-      !isAuthenticated ||
-      currentUserIdString === null ||
-      !nickname
-    )
-      return;
-    const buyInAmount = 1000;
-    console.log(
-      `Table.jsx: Sending 'player_take_a_seat' for table: ${tableId}, seat: ${seatId}, buy-in: ${buyInAmount}, userId: ${currentUserIdString}, nickname: ${nickname}`
-    );
-    socket.emit("player_take_a_seat", {
-      table_id: tableId,
-      seat: seatId,
-      buy_in_amount: buyInAmount,
-    });
   };
 
-  const handleStandUp = () => {
-    if (!socket || !isAuthenticated || currentUserIdString === null) return;
-    console.log(
-      `Table.jsx: Sending 'player_standup' for table: ${tableId}, userId: ${currentUserIdString}`
-    );
-    socket.emit("player_standup", {
-      table_id: tableId,
-      user_id: currentUserIdString,
-    });
+  useEffect(() => {
+    // הגדרת התמונה הראשונית בעת טעינת הקומפוננטה
+    updateBackgroundImage();
+
+    // הוספת Event Listener לשינוי גודל החלון
+    // זה יגרום לתמונה להתעדכן אוטומטית אם המשתמש משנה את גודל החלון
+    window.addEventListener("resize", updateBackgroundImage);
+
+    // ניקוי ה-Event Listener בעת הסרת הקומפוננטה כדי למנוע דליפות זיכרון
+    return () => window.removeEventListener("resize", updateBackgroundImage);
+  }, []); // ריצה רק פעם אחת בעת טעינת הקומפוננטה (כמו componentDidMount)
+
+  // הגדרות מיקום למושבים (אחוזים ביחס לשולחן)
+  // מיקומים אלו מותאמים לשולחן עגול/אליפטי
+  const seatPositions = {
+    1: { top: "10%", left: "50%" }, // למעלה אמצע
+    2: { top: "25%", left: "85%" }, // ימין למעלה
+    3: { top: "75%", left: "85%" }, // ימין למטה
+    4: { top: "90%", left: "50%" }, // למטה אמצע
+    5: { top: "75%", left: "15%" }, // שמאל למטה
+    6: { top: "25%", left: "15%" }, // שמאל למעלה
   };
 
-  if (authStatus === "loading" || authStatus === "idle") {
-    return <p>🔄 Loading connection data...</p>;
-  }
-
-  if (!isAuthenticated) {
-    return <p>🔒 You must be logged in to play.</p>;
-  }
-
-  if (!tableState || !tableInfo) {
-    return <p>Loading table state...</p>;
-  }
-
-  const seatPositionsByMaxPlayers = {
-    6: [
-      { top: "10%", left: "50%" },
-      { top: "30%", left: "85%" },
-      { top: "70%", left: "85%" },
-      { top: "90%", left: "50%" },
-      { top: "70%", left: "15%" },
-      { top: "30%", left: "15%" },
-    ],
-  };
-
-  const seatPositions = seatPositionsByMaxPlayers[tableState.max_players] || [];
-
-  // We also need to identify the standing player if they exist, to pass to Seat
-  const selfPlayerInSeat = tableState.seats.find(
-    (seat) =>
-      seat &&
-      seat.player_data &&
-      String(seat.player_data.id) === currentUserIdString
-  )?.player_data; // Get the player_data directly
-
-  const selfPlayerAsSpectator = tableState.viewers.find(
-    (s) => s && String(s.id) === currentUserIdString
+  // מציאת השחקן הנוכחי לפי ה-ID שלו
+  const currentPlayer = players.find(
+    (player) => player.user_id === currentPlayerId
   );
 
-  const selfPlayer = selfPlayerInSeat || selfPlayerAsSpectator;
-  const isCurrentPlayerStanding = selfPlayer && !selfPlayerInSeat;
-
   return (
-    <div className="poker-table-wrapper">
-      {/* Loop over all possible seats */}
-      {Array.from({ length: tableState.max_players }, (_, i) => i + 1).map(
-        (seatId) => {
-          const seatStyle = seatPositions[seatId - 1] || {};
-          // Find the specific seat object from the tableState.seats array
-          // The backend sends an array of seat objects, each with a 'seat_number' and 'player_data' (if occupied)
-          const seatData = tableState.seats.find(
-            (seat) => seat && seat.seat_number === seatId
-          );
-
-          // playerInThisSeat will contain the player's data object or null
-          const playerInThisSeat = seatData ? seatData.player_data : null;
-
+    <div
+      className="poker-table-wrapper"
+      style={{
+        backgroundImage: `url(${currentTableImage})`, // הגדרת תמונת הרקע הדינמית
+        backgroundSize: "cover", // התמונה תכסה את כל השטח של האלמנט
+        backgroundPosition: "center", // התמונה תמורכז בתוך האלמנט
+        backgroundRepeat: "no-repeat", // התמונה לא תחזור על עצמה
+      }}
+    >
+      {/* Community Cards Display - קלפי קהילה במרכז השולחן */}
+      <div className="community-cards-display">
+        {communityCards.map((card, index) => {
+          const isRed = card.suit === "♥" || card.suit === "♦"; // קביעת צבע הקלף
           return (
-            <Seat
-              key={seatId}
-              seatId={seatId}
-              playerInSeat={playerInThisSeat} // Pass the player object or null
-              seatStyle={seatStyle}
-              // Is the current player seated at this specific seat?
-              isCurrentPlayerAtThisSeat={
-                playerInThisSeat &&
-                String(playerInThisSeat.id) === currentUserIdString
-              }
-              // Does the current player occupy any seat at all? (to decide on showing "Sit" button)
-              currentPlayerSeatExists={currentPlayerSeat !== null}
-              // Pass selfPlayer info to know if they are "standing"
-              selfPlayer={selfPlayer}
-              onSit={handleSit}
-              onStandUp={handleStandUp}
-            />
+            <div
+              key={index}
+              className="community-card"
+              style={{ color: isRed ? "red" : "black" }}
+            >
+              <div>{card.rank}</div> {/* דרגת הקלף (A, K, Q, J, 10...) */}
+              <div style={{ fontSize: "0.7em" }}>{card.suit}</div>{" "}
+              {/* צורת הקלף (♠, ♥, ♦, ♣) */}
+            </div>
           );
-        }
-      )}
-      {/* Additional area for "standing" or "spectator" players if you want to display them separately */}
-      {isCurrentPlayerStanding &&
-        selfPlayer && ( // Ensure selfPlayer exists
-          <div
-            style={{
-              position: "absolute",
-              bottom: "10px",
-              left: "10px",
-              background: "rgba(0,0,0,0.5)",
-              padding: "10px",
-              borderRadius: "5px",
-              color: "white",
-            }}
-          >
-            <p>You are standing at the table: {selfPlayer.nickname}</p>
-            {/* Assuming stack exists for spectators if relevant */}
-            {selfPlayer.stack !== undefined && <p>Chips: {selfPlayer.stack}</p>}
-          </div>
-        )}
-      {/* Spectator list - if you want to display it */}
-      {tableState.viewers &&
-        tableState.viewers.length > 0 && ( // Changed from spectators_list to viewers
-          <div className="spectator-list-display">
-            <h3>Spectators ({tableState.viewers.length}):</h3>
-            <ul>
-              {tableState.viewers.map((s) => (
-                <li key={s.id}>{s.nickname}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      {tableState.current_turn_player_id === currentUserIdString && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            right: "20px",
-            zIndex: 10,
-          }}
-        >
-          <ActionButtons
-            tableState={tableState}
-            currentUserId={currentUserIdString}
-            tableId={tableId}
-            socket={socket}
+        })}
+      </div>
+
+      {/* Pot Display - תצוגת הקופה הנוכחית */}
+      <div className="pot-display">Pot: ${pot}</div>
+
+      {/* Table Info Display - מידע כללי על השולחן */}
+      <div className="table-info-display">
+        <h3>Table Info</h3>
+        <p>Game ID: {tableInfo.game_id}</p>
+        <p>Small Blind: ${tableInfo.small_blind}</p>
+        <p>Big Blind: ${tableInfo.big_blind}</p>
+        <p>Current Bet: ${tableInfo.current_bet}</p>
+        <p>Dealer Seat: {tableInfo.dealer_seat_id}</p>
+        <p>Current Player Turn: {tableInfo.current_player_turn_seat_id}</p>
+        <p>Round Name: {tableInfo.round_name}</p>
+      </div>
+
+      {/* Spectator List Display - רשימת צופים */}
+      <div className="spectator-list-display">
+        <h3>Spectators ({spectators.length})</h3>
+        <ul>
+          {spectators.map((spectator, index) => (
+            <li key={index}>{spectator.nickname || spectator.username}</li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Render Seats - רינדור המושבים סביב השולחן */}
+      {Object.entries(seatPositions).map(([seatId, style]) => {
+        // מציאת השחקן שיושב במושב הנוכחי
+        const playerInSeat = players.find(
+          (player) => player.seat_id === parseInt(seatId)
+        );
+        // בדיקה אם השחקן הנוכחי שלנו יושב במושב זה
+        const isCurrentPlayerAtThisSeat =
+          currentPlayer && currentPlayer.seat_id === parseInt(seatId);
+
+        return (
+          <Seat
+            key={seatId}
+            seatId={parseInt(seatId)}
+            playerInSeat={playerInSeat}
+            seatStyle={style}
+            isCurrentPlayerAtThisSeat={isCurrentPlayerAtThisSeat}
+            currentPlayerSeatExists={isCurrentPlayerSitting}
+            onSit={onSit}
+            onStandUp={onStandUp}
           />
+        );
+      })}
+
+      {/* Action Buttons - כפתורי פעולה (רק לשחקן הנוכחי) */}
+      {isCurrentPlayerSitting && (
+        <div className="action-buttons-container">
+          <button onClick={onFold}>Fold</button>
+          <button onClick={onCall}>Call</button>
+          <button onClick={onRaise}>Raise</button>
         </div>
       )}
-      {/* Update property names according to the new JSON */}
-      <PotDisplay potAmount={tableState.pot_size} />{" "}
-      {/* Changed from pot to pot_size */}
-      <CommunityCardsDisplay communityCards={tableState.community_cards} />
-      <TableInfoDisplay
-        tableName={tableInfo.name || tableId}
-        smallBlind={tableInfo.small_blind}
-        bigBlind={tableInfo.big_blind}
-        maxPlayers={tableInfo.max_players}
-      />
     </div>
   );
 }

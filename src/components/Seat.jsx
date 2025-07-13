@@ -32,10 +32,10 @@ function Seat({
           ? "2px solid #f1c40f"
           : "1px solid #555", // מסגרת אם זה השחקן הנוכחי
         borderRadius: "50%", // עיגול לכיסא
-        // ✅ REMOVED: width: "120px",
-        // ✅ REMOVED: height: "120px",
+        // REMOVED: width: "120px",
+        // REMOVED: height: "120px",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "column", // כדי שהדרגה והצורה יהיו אחד מעל השני
         justifyContent: "center",
         alignItems: "center",
         color: "white",
